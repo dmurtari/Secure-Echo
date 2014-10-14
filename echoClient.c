@@ -34,6 +34,11 @@ main(int argc, char *argv[])
 {
 	char	*host = "localhost";	/* host to use if none supplied	*/
 	char	*portnum = "5004";	/* default server port number	*/
+  
+  /* SSL Stuff */
+  SSL_METHOD *meth;
+  SSL_CTX *ctx;
+  SSL *myssl;
 
 	switch (argc) {
 	case 1:
@@ -52,6 +57,9 @@ main(int argc, char *argv[])
 
   SSL_library_init(); /* load encryption & hash algorithms for SSL */                
   SSL_load_error_strings(); /* load the error strings for good error reporting */
+
+  meth = SSLv3_client_method();
+  ctx = SSL_CTX_new(meth);
 
 	TCPecho(host, portnum);
 	exit(0);

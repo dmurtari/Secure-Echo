@@ -36,7 +36,12 @@ main(int argc, char *argv[])
 	fd_set	afds;			/* active file descriptor set	*/
 	unsigned int	alen;		/* from-address length		*/
 	int	fd, nfds;
-	
+
+  /* SSL Stuff */
+  SSL_METHOD *meth;
+  SSL_CTX *ctx;
+  SSL *myssl;
+
 	switch (argc) {
 	case	1:
 		break;
@@ -49,6 +54,9 @@ main(int argc, char *argv[])
 
   SSL_library_init(); /* load encryption & hash algorithms for SSL */                
   SSL_load_error_strings(); /* load the error strings for good error reporting */
+
+  meth = SSLv3_server_method();
+  ctx = SSL_CTX_new(meth);
 
 	msock = passivesock(portnum, QLEN);
 
