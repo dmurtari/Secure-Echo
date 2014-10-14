@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <openssl/ssl.h>
 
 #include <stdarg.h>
 #include <unistd.h>
@@ -48,6 +49,10 @@ main(int argc, char *argv[])
 		fprintf(stderr, "usage: TCPecho [host [port]]\n");
 		exit(1);
 	}
+
+  SSL_library_init(); /* load encryption & hash algorithms for SSL */                
+  SSL_load_error_strings(); /* load the error strings for good error reporting */
+
 	TCPecho(host, portnum);
 	exit(0);
 }

@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -7,6 +6,7 @@
 #include <sys/errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <openssl/ssl.h>
 
 #include <stdarg.h>
 #include <unistd.h>
@@ -46,6 +46,9 @@ main(int argc, char *argv[])
 	default:
 		errexit("usage: TCPmechod [port]\n");
 	}
+
+  SSL_library_init(); /* load encryption & hash algorithms for SSL */                
+  SSL_load_error_strings(); /* load the error strings for good error reporting */
 
 	msock = passivesock(portnum, QLEN);
 
