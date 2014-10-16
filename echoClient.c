@@ -52,11 +52,6 @@ main(int argc, char *argv[])
 {
 	char	*host = "localhost";	/* host to use if none supplied	*/
 	char	*portnum = "5004";	/* default server port number	*/
-  
-  /* SSL Stuff */
-  SSL_METHOD *meth;
-  SSL_CTX *ctx;
-  SSL *myssl;
 
 	switch (argc) {
 	case 1:
@@ -72,6 +67,26 @@ main(int argc, char *argv[])
 		fprintf(stderr, "usage: TCPecho [host [port]]\n");
 		exit(1);
 	}
+
+	TCPecho(host, portnum);
+	exit(0);
+}
+
+/*------------------------------------------------------------------------
+ * TCPecho - send input to ECHO service on specified host and print reply
+ *------------------------------------------------------------------------
+ */
+int
+TCPecho(const char *host, const char *portnum)
+{
+	char	buf[LINELEN+1];		/* buffer for one line of text	*/
+	int	s, n;			/* socket descriptor, read count*/
+	int	outchars, inchars;	/* characters sent and received	*/
+  
+  /* SSL Stuff */
+  SSL_METHOD *meth;
+  SSL_CTX *ctx;
+  SSL *myssl;
 
   SSL_library_init(); /* load encryption & hash algorithms for SSL */                
   SSL_load_error_strings(); /* load the error strings for good error reporting */
@@ -130,21 +145,7 @@ main(int argc, char *argv[])
      printf("Error creating SSL structure.\n");
      exit(0);
   }
-	TCPecho(host, portnum);
-	exit(0);
-}
-
-/*------------------------------------------------------------------------
- * TCPecho - send input to ECHO service on specified host and print reply
- *------------------------------------------------------------------------
- */
-int
-TCPecho(const char *host, const char *portnum)
-{
-	char	buf[LINELEN+1];		/* buffer for one line of text	*/
-	int	s, n;			/* socket descriptor, read count*/
-	int	outchars, inchars;	/* characters sent and received	*/
-
+  
 	s = connectsock(host, portnum);
 
 	while (fgets(buf, sizeof(buf), stdin)) {
@@ -217,6 +218,8 @@ connectsock(const char *host, const char *portnum)
         if (connect(s, (struct sockaddr *)&sin, sizeof(sin)) < 0)
                 errexit("can't connect to %s.%s: %s\n", host, portnum,
                         strerror(errno));
+
+
         return s;
 }
 
