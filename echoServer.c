@@ -97,8 +97,7 @@ main(int argc, char *argv[])
     exit(0);
   }
 
-  /* Create new ssl object*/
-  myssl=SSL_new(ctx);
+
 
   if(!myssl) {
     printf("Error creating SSL structure.\n");
@@ -107,21 +106,6 @@ main(int argc, char *argv[])
 
 	msock = passivesock(portnum, QLEN);
 
-  /* Set socket into SSL structure */
-  SSL_set_fd(myssl, msock);
-
-  /* Do the SSL Handshake */
-  err = SSL_accept(myssl);
-
-  /* Check for error in handshake */
-  if (err < 1) {
-    err = SSL_get_error(myssl, err);
-    printf("SSL error #%d in SSL_accept, program terminated\n", err);
-    close(msock);
-    SSL_CTX_free(ctx);
-    exit(0);
-  }
-
 	nfds = getdtablesize();
 	FD_ZERO(&afds);
 	FD_SET(msock, &afds);
@@ -129,19 +113,34 @@ main(int argc, char *argv[])
 	while (1) {
 		memcpy(&rfds, &afds, sizeof(rfds));
 
-		if (select(nfds, &rfds, (fd_set *)0, (fd_set *)0,
-				(struct timeval *)0) < 0)
+		if (select(nfds, &rfds, (fd_set *)0, (fd_set *)0, (struct timeval *)0) < 0)
 			errexit("select: %s\n", strerror(errno));
 		if (FD_ISSET(msock, &rfds)) {
 			int	ssock;
 
 			alen = sizeof(fsin);
-			ssock = accept(msock, (struct sockaddr *)&fsin,
-				&alen);
+			ssock = accept(msock, (struct sockaddr *)&fsin, &alen);
 			if (ssock < 0)
-				errexit("accept: %s\n",
-					strerror(errno));
+				errexit("accept: %s\n", strerror(errno));
 			FD_SET(ssock, &afds);
+
+      /* Create new ssl object*/
+      myssl=SSL_new(ctx);
+
+      /* Set socket into SSL structure */
+      SSL_set_fd(myssl, ssock);
+
+      /* Do the SSL Handshake */
+      err = SSL_accept(myssl);
+
+      /* Check for error in handshake */
+      if (err < 1) {
+        err = SSL_get_error(myssl, err);
+        printf("SSL error #%d in SSL_accept, program terminated\n", err);
+        close(msock);
+        SSL_CTX_free(ctx);
+        exit(0);
+      }
 		}
 		for (fd=0; fd<nfds; ++fd)
 			if (fd != msock && FD_ISSET(fd, &rfds))
