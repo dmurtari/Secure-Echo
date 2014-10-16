@@ -29,13 +29,6 @@
 #define CERT_FILE  "server.cert"
 #define KEY_FILE  "server_priv.key"
 
-/*Cipher list to be used*/
-#define CIPHER_LIST "AES128-SHA"
-
-/*Trusted CAs location*/
-#define CA_FILE "cacert.pem"
-#define CA_DIR  NULL
-
 extern int	errno;
 int		errexit(const char *format, ...);
 int		passivesock(const char *portnum, int qlen);
@@ -83,12 +76,6 @@ main(int argc, char *argv[])
     exit(0);
   }
 
-  /* Set the Cipher List 
-  if (SSL_CTX_set_cipher_list(ctx, CIPHER_LIST) <= 0) {
-    printf("Error setting the cipher list.\n");
-    exit(0);
-  }
-
   /* Set the certificate to be used. */
   if (SSL_CTX_use_certificate_file(ctx, CERT_FILE, SSL_FILETYPE_PEM) <= 0) {
     printf("Error setting the certificate file.\n");
@@ -96,7 +83,7 @@ main(int argc, char *argv[])
   }
 
   /* Load the password for the Private Key */
-  SSL_CTX_set_default_passwd_cb_userdata(ctx,KEY_PASSWD);
+  SSL_CTX_set_default_passwd_cb_userdata(ctx, KEY_PASSWD);
 
   /* Indicate the key file to be used */
   if (SSL_CTX_use_PrivateKey_file(ctx, KEY_FILE, SSL_FILETYPE_PEM) <= 0) {
@@ -107,12 +94,6 @@ main(int argc, char *argv[])
   /* Make sure the key and certificate file match */
   if (SSL_CTX_check_private_key(ctx) == 0) {
     printf("Private key does not match the certificate public key\n");
-    exit(0);
-  }
-
-  /*  Load certificates of trusted CAs based on file provided */
-  if (SSL_CTX_load_verify_locations(ctx, CA_FILE, CA_DIR)<1) {
-    printf("Error setting the verify locations.\n");
     exit(0);
   }
 
