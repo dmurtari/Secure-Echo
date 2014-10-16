@@ -30,11 +30,8 @@ int	connectsock(const char *host, const char *portnum);
 
 #define	LINELEN		128
 
-#define CERT_FILE  "./cacert.pem"
-#define KEY_FILE  "./cakey.pem"
-
-/*Cipher list to be used*/
-#define CIPHER_LIST "AES128-SHA"
+#define CERT_FILE  "cacert.pem"
+#define KEY_FILE  "cakey.pem"
 
 /*Trusted CAs location*/
 #define CA_FILE "./cacert.pem"
@@ -94,15 +91,10 @@ TCPecho(const char *host, const char *portnum)
 
   meth = TLSv1_client_method();
   ctx = SSL_CTX_new(meth);
+  
   if (!ctx) {
      printf("Error creating the context.\n");
      exit(0);
-  }
-
-  /* Set cipher list */
-  if (SSL_CTX_set_cipher_list(ctx,CIPHER_LIST) <= 0) {
-    printf("Error setting the cipher list.\n");
-    exit(0);
   }
 
   /* Indicate the certificate file to be used */
@@ -172,10 +164,9 @@ TCPecho(const char *host, const char *portnum)
 
 		/* read it back */
 		for (inchars = 0; inchars < outchars; inchars+=n ) {
-			n = read(s, &buf[inchars], outchars - inchars);
+			n = SSL_read(myssl, &buf[inchars], outchars - inchars);
 			if (n < 0)
-				errexit("socket read failed: %s\n",
-					strerror(errno));
+				errexit("socket read failed: %s\n", strerror(errno));
 		}
 		fputs(buf, stdout);
 	}
