@@ -26,14 +26,14 @@
 #define KEY_PASSWD "netsys_2014"
 
 /* Make these what you want for certificate & key files */
-#define CERT_FILE  "./cacert.pem"
-#define KEY_FILE  "./cakey.pem"
+#define CERT_FILE  "server.cert"
+#define KEY_FILE  "server_priv.key"
 
 /*Cipher list to be used*/
 #define CIPHER_LIST "AES128-SHA"
 
 /*Trusted CAs location*/
-#define CA_FILE "./cacert.pem"
+#define CA_FILE "cacert.pem"
 #define CA_DIR  NULL
 
 extern int	errno;
@@ -50,11 +50,17 @@ main(int argc, char *argv[])
 {
 	char	*portnum = "5004";	/* Standard server port number	*/
 	struct sockaddr_in fsin;	/* the from address of a client	*/
-	int	msock;			/* master server socket		*/
-	fd_set	rfds;			/* read file descriptor set	*/
-	fd_set	afds;			/* active file descriptor set	*/
-	unsigned int	alen;		/* from-address length		*/
+	int	msock;			          /* master server socket		*/
+	fd_set	rfds;			        /* read file descriptor set	*/
+	fd_set	afds;			        /* active file descriptor set	*/
+	unsigned int	alen;		    /* from-address length		*/
 	int	fd, nfds;
+
+  /* SSL Stuff */
+  const SSL_METHOD *meth;
+  SSL_CTX *ctx;
+  SSL *myssl;
+  int err;
 
 	switch (argc) {
 	case	1:
@@ -63,14 +69,8 @@ main(int argc, char *argv[])
 		portnum = argv[1];
 		break;
 	default:
-		errexit("usage: TCPmechod [port]\n");
+		errexit("usage: TCPmethod [port]\n");
 	}
-
-
-  /* SSL Stuff */
-  SSL_METHOD *meth;
-  SSL_CTX *ctx;
-  SSL *myssl;
 
   SSL_library_init(); /* load encryption & hash algorithms for SSL */                
   SSL_load_error_strings(); /* load the error strings for good error reporting */
@@ -83,7 +83,7 @@ main(int argc, char *argv[])
     exit(0);
   }
 
-  /* Set the Cipher List */
+  /* Set the Cipher List 
   if (SSL_CTX_set_cipher_list(ctx, CIPHER_LIST) <= 0) {
     printf("Error setting the cipher list.\n");
     exit(0);
@@ -111,7 +111,7 @@ main(int argc, char *argv[])
   }
 
   /*  Load certificates of trusted CAs based on file provided */
-  if (SSL_CTX_load_verify_locations(ctx,CA_FILE,CA_DIR)<1) {
+  if (SSL_CTX_load_verify_locations(ctx, CA_FILE, CA_DIR)<1) {
     printf("Error setting the verify locations.\n");
     exit(0);
   }
@@ -123,8 +123,23 @@ main(int argc, char *argv[])
     printf("Error creating SSL structure.\n");
     exit(0);
   }
-  
+
 	msock = passivesock(portnum, QLEN);
+
+  /* Set socket into SSL structure */
+  SSL_set_fd(myssl, msock);
+
+  /* Do the SSL Handshake */
+  err = SSL_accept(myssl);
+
+  /* Check for error in handshake */
+  if (err < 1) {
+    err = SSL_get_error(myssl, err);
+    printf("SSL error #%d in SSL_accept, program terminated\n", err);
+    close(msock);
+    SSL_CTX_free(ctx);
+    exit(0);
+  }
 
 	nfds = getdtablesize();
 	FD_ZERO(&afds);

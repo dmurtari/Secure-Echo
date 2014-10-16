@@ -84,14 +84,15 @@ TCPecho(const char *host, const char *portnum)
 	int	outchars, inchars;	/* characters sent and received	*/
   
   /* SSL Stuff */
-  SSL_METHOD *meth;
+  const SSL_METHOD *meth;
   SSL_CTX *ctx;
   SSL *myssl;
+  int err;
 
   SSL_library_init(); /* load encryption & hash algorithms for SSL */                
   SSL_load_error_strings(); /* load the error strings for good error reporting */
 
-  meth = SSLv3_client_method();
+  meth = TLSv1_client_method();
   ctx = SSL_CTX_new(meth);
   if (!ctx) {
      printf("Error creating the context.\n");
@@ -112,7 +113,7 @@ TCPecho(const char *host, const char *portnum)
   }
 
   /* Load the password for the Private Key */
-  SSL_CTX_set_default_passwd_cb_userdata(ctx ,KEY_PASSWD);
+  SSL_CTX_set_default_passwd_cb_userdata(ctx, KEY_PASSWD);
 
   /* Indicate the key file to be used */
   if (SSL_CTX_use_PrivateKey_file(ctx, KEY_FILE, SSL_FILETYPE_PEM) <= 0) {
@@ -145,8 +146,24 @@ TCPecho(const char *host, const char *portnum)
      printf("Error creating SSL structure.\n");
      exit(0);
   }
-  
+
 	s = connectsock(host, portnum);
+
+  /* Set socket into SSL structure */
+  SSL_set_fd(myssl, s);
+
+  /* Connect to the server, SSL layer */
+  err = SSL_connect(myssl);
+
+  /* Check for error in connect */
+  if (err < 1) {
+    err = SSL_get_error(myssl,err);
+    printf("SSL error #%d in accept, program terminated\n", err);
+    close(s);
+    SSL_free(myssl);
+    SSL_CTX_free(ctx);
+    exit(0);
+  }
 
 	while (fgets(buf, sizeof(buf), stdin)) {
 		buf[LINELEN] = '\0';	/* insure line null-terminated	*/
