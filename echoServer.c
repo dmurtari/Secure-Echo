@@ -98,11 +98,6 @@ main(int argc, char *argv[])
     exit(0);
   }
 
-  if(!myssl) {
-    printf("Error creating SSL structure.\n");
-    exit(0);
-  }
-
 	msock = passivesock(portnum, QLEN);
 
 	nfds = getdtablesize();
@@ -166,7 +161,7 @@ int echo(SSL *myssl) {
 	char	buf[BUFSIZ];
 	int	cc;
 
-	cc = SSL_read(myssl, buf, sizeof buf);
+	cc = SSL_read(myssl, buf, sizeof(buf));
 	if (cc < 0)
 		errexit("echo read: %s\n", strerror(errno));
 	if (cc && SSL_write(myssl, buf, cc) < 0)
@@ -236,7 +231,7 @@ passivesock(const char *portnum, int qlen)
   }
 
   if (listen(s, qlen) < 0)
-  errexit("can't listen on %s port: %s\n", portnum, strerror(errno));
+    errexit("can't listen on %s port: %s\n", portnum, strerror(errno));
   return s;
 }
 
