@@ -160,7 +160,7 @@ TCPecho(const char *host, const char *portnum)
 	while (fgets(buf, sizeof(buf), stdin)) {
 		buf[LINELEN] = '\0';	/* insure line null-terminated	*/
 		outchars = strlen(buf);
-		(void) write(s, buf, outchars);
+		SSL_write(myssl, buf, outchars);
 
 		/* read it back */
 		for (inchars = 0; inchars < outchars; inchars+=n ) {
