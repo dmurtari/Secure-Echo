@@ -32,7 +32,7 @@
 extern int	errno;
 int		errexit(const char *format, ...);
 int		passivesock(const char *portnum, int qlen);
-int		echo(int fd);
+int		echo(SSL *myssl);
 
 /*------------------------------------------------------------------------
  * main - Concurrent TCP server for ECHO service
@@ -54,6 +54,7 @@ main(int argc, char *argv[])
   SSL_CTX *ctx;
   SSL *myssl;
   int err;
+  SSL *client_connections[QLEN];
 
 	switch (argc) {
 	case	1:
@@ -97,8 +98,6 @@ main(int argc, char *argv[])
     exit(0);
   }
 
-
-
   if(!myssl) {
     printf("Error creating SSL structure.\n");
     exit(0);
@@ -141,10 +140,18 @@ main(int argc, char *argv[])
         SSL_CTX_free(ctx);
         exit(0);
       }
+
+      client_connections[ssock] = myssl;
 		}
+    
 		for (fd=0; fd<nfds; ++fd)
 			if (fd != msock && FD_ISSET(fd, &rfds))
-				if (echo(fd) == 0) {
+				if (echo(client_connections[fd]) == 0) {
+          SSL *myssl = client_connections[fd];
+          client_connections[fd] = NULL;
+
+          SSL_shutdown(myssl);
+          SSL_free(myssl);
 					(void) close(fd);
 					FD_CLR(fd, &afds);
 				}
@@ -155,16 +162,14 @@ main(int argc, char *argv[])
  * echo - echo one buffer of data, returning byte count
  *------------------------------------------------------------------------
  */
-int
-echo(int fd)
-{
+int echo(SSL *myssl) {
 	char	buf[BUFSIZ];
 	int	cc;
 
-	cc = read(fd, buf, sizeof buf);
+	cc = SSL_read(myssl, buf, sizeof buf);
 	if (cc < 0)
 		errexit("echo read: %s\n", strerror(errno));
-	if (cc && write(fd, buf, cc) < 0)
+	if (cc && SSL_write(myssl, buf, cc) < 0)
 		errexit("echo write: %s\n", strerror(errno));
 	return cc;
 }
